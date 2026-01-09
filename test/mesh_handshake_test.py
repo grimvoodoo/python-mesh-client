@@ -19,7 +19,7 @@ import uuid
 from datetime import datetime
 
 
-def generate_authorization_header(mailbox_id, password, nonce, nonce_count, timestamp):
+def generate_authorization_header(mailbox_id, password, shared_key, nonce, nonce_count, timestamp):
     """
     Generate the MESH authorization header.
     
@@ -28,6 +28,7 @@ def generate_authorization_header(mailbox_id, password, nonce, nonce_count, time
     Args:
         mailbox_id: MESH mailbox identifier
         password: MESH mailbox password
+        shared_key: MESH shared key
         nonce: Unique nonce for this request
         nonce_count: Nonce counter
         timestamp: ISO 8601 timestamp
@@ -35,10 +36,12 @@ def generate_authorization_header(mailbox_id, password, nonce, nonce_count, time
     Returns:
         Authorization header value
     """
-    # Create the hash chain
-    # Hash 1: mailbox_id:nonce:nonce_count:password:timestamp
-    hash_data = f"{mailbox_id}:{nonce}:{nonce_count}:{password}:{timestamp}"
-    myhash = hashlib.sha256(hash_data.encode()).hexdigest()
+    # Create the hash chain for MESH authentication
+    # Hash the password with shared key
+    hash1 = hashlib.sha256(f"{mailbox_id}:{nonce}:{nonce_count}:{password}:{timestamp}".encode()).hexdigest()
+    
+    # Hash again with shared key
+    hash2 = hashlib.sha256(f"{shared_key}:{nonce}:{nonce_count}:{hash1}".encode()).hexdigest()
     
     # Build authorization header
     auth_header = (
@@ -46,20 +49,21 @@ def generate_authorization_header(mailbox_id, password, nonce, nonce_count, time
         f'{nonce}:'
         f'{nonce_count}:'
         f'{timestamp}:'
-        f'{myhash}'
+        f'{hash2}'
     )
     
     return auth_header
 
 
-def perform_handshake(endpoint_url, mailbox_id, password, verify_ssl=True):
+def perform_handshake(endpoint_url, mailbox_id, password, shared_key, verify_ssl=True):
     """
     Perform a handshake with the MESH mailbox.
     
     Args:
-        endpoint_url: Base MESH API URL (e.g., https://localhost:8700)
+        endpoint_url: Base MESH API URL (e.g., http://localhost:8700)
         mailbox_id: MESH mailbox identifier
         password: MESH mailbox password
+        shared_key: MESH shared key
         verify_ssl: Whether to verify SSL certificates (False for local sandbox)
         
     Returns:
@@ -75,7 +79,7 @@ def perform_handshake(endpoint_url, mailbox_id, password, verify_ssl=True):
     
     # Generate authorization header
     auth_header = generate_authorization_header(
-        mailbox_id, password, nonce, nonce_count, timestamp
+        mailbox_id, password, shared_key, nonce, nonce_count, timestamp
     )
     
     # Set up headers
@@ -90,6 +94,7 @@ def perform_handshake(endpoint_url, mailbox_id, password, verify_ssl=True):
     print(f"Attempting handshake with MESH mailbox...")
     print(f"  URL: {handshake_url}")
     print(f"  Mailbox: {mailbox_id}")
+    print(f"  Shared Key: {shared_key}")
     print(f"  Nonce: {nonce}")
     print(f"  Timestamp: {timestamp}")
     print(f"  Auth Header: {auth_header[:50]}...")
@@ -192,9 +197,10 @@ def main():
     print("=" * 60)
     
     # Get configuration from environment or use defaults for local sandbox
-    endpoint_url = os.environ.get('MESH_ENDPOINT_URL', 'https://localhost:8700')
+    endpoint_url = os.environ.get('MESH_ENDPOINT_URL', 'http://localhost:8700')
     mailbox_id = os.environ.get('MESH_MAILBOX_ID', 'X26ABC1')
     password = os.environ.get('MESH_PASSWORD', 'password')
+    shared_key = os.environ.get('MESH_SHARED_KEY', 'TestKey')
     verify_ssl = os.environ.get('MESH_VERIFY_SSL', 'false').lower() == 'true'
     
     cert_file = os.environ.get('MESH_CERT_FILE')
@@ -203,6 +209,7 @@ def main():
     print(f"\nConfiguration:")
     print(f"  Endpoint: {endpoint_url}")
     print(f"  Mailbox ID: {mailbox_id}")
+    print(f"  Shared Key: {shared_key}")
     print(f"  Verify SSL: {verify_ssl}")
     print(f"  Cert File: {cert_file or 'Not provided'}")
     print(f"  Key File: {key_file or 'Not provided'}")
@@ -213,7 +220,7 @@ def main():
     print("=" * 60)
     
     success, data, error = perform_handshake(
-        endpoint_url, mailbox_id, password, verify_ssl
+        endpoint_url, mailbox_id, password, shared_key, verify_ssl
     )
     
     if success:

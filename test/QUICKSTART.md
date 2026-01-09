@@ -4,7 +4,7 @@ This guide will help you quickly test the MESH client with your local Docker san
 
 ## Prerequisites
 
-- Docker container running MESH sandbox on `https://localhost:8700`
+- Docker container running MESH sandbox on `http://localhost:8700`
 - Python 3.7+ installed
 
 ## Setup (5 minutes)
@@ -18,9 +18,10 @@ pip install -r test/requirements.txt
 2. **Configure environment (optional):**
 
 The handshake test uses these defaults for local sandbox:
-- Endpoint: `https://localhost:8700`
+- Endpoint: `http://localhost:8700`
 - Mailbox ID: `X26ABC1`
 - Password: `password`
+- Shared Key: `TestKey`
 - SSL Verification: `false`
 
 To override, create a `.env` file:
@@ -43,8 +44,9 @@ NHS MESH Handshake Test
 ============================================================
 
 Configuration:
-  Endpoint: https://localhost:8700
+  Endpoint: http://localhost:8700
   Mailbox ID: X26ABC1
+  Shared Key: TestKey
   Verify SSL: False
   ...
 
@@ -52,7 +54,8 @@ Configuration:
 Test 1: Manual Handshake
 ============================================================
 Attempting handshake with MESH mailbox...
-  URL: https://localhost:8700/messageexchange/X26ABC1
+  URL: http://localhost:8700/messageexchange/X26ABC1
+  Shared Key: TestKey
   ...
 
 ✓ Handshake successful!
@@ -78,9 +81,10 @@ mesh-client Library: ✓ PASSED
 
 ### Authentication Failed
 - Verify mailbox credentials match your sandbox configuration
-- Default sandbox credentials are usually:
-  - Mailbox: `X26ABC1`
+- Default sandbox credentials are:
+  - Mailbox: `X26ABC1` (or `X26ABC2`, `X26ABC3`)
   - Password: `password`
+  - Shared Key: `TestKey`
 
 ## Next Steps
 
@@ -112,7 +116,7 @@ docker logs <container_name>
 docker restart <container_name>
 
 # Check mailbox status (example)
-curl -k https://localhost:8700/messageexchange/X26ABC1 \
+curl http://localhost:8700/messageexchange/X26ABC1 \
   -H "Authorization: NHSMESH ..." \
   -X POST
 ```
@@ -121,9 +125,10 @@ curl -k https://localhost:8700/messageexchange/X26ABC1 \
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| MESH_ENDPOINT_URL | https://localhost:8700 | Sandbox API URL |
+| MESH_ENDPOINT_URL | http://localhost:8700 | Sandbox API URL |
 | MESH_MAILBOX_ID | X26ABC1 | Mailbox identifier |
 | MESH_PASSWORD | password | Mailbox password |
+| MESH_SHARED_KEY | TestKey | Shared key for authentication |
 | MESH_VERIFY_SSL | false | SSL verification (false for local) |
 | MESH_CERT_FILE | - | Client cert (not needed for sandbox) |
 | MESH_KEY_FILE | - | Client key (not needed for sandbox) |
