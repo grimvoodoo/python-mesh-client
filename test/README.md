@@ -22,7 +22,21 @@ export $(cat test/.env | xargs)
 
 ## Running Tests
 
-Execute the test script:
+### Handshake Test (Verify Connectivity)
+
+First, verify connectivity with your MESH sandbox:
+```bash
+python test/mesh_handshake_test.py
+```
+
+This will:
+- Test manual handshake with the MESH API
+- Test using the mesh-client library
+- Confirm authentication and connectivity
+
+### Full Integration Test
+
+Execute the full test script:
 ```bash
 python test/mesh_client_test.py
 ```
